@@ -1,0 +1,63 @@
+stages:
+  - Deploy
+
+variables:
+  CURRENT_IMAGE: "$CI_REGISTRY_IMAGE:$CI_MERGE_REQUEST_ID"
+  STABLE_IMAGE: "$CI_REGISTRY_IMAGE:stable"
+
+.docker:
+  needs: []
+  image: docker:stable
+  allow_failure: true
+  only:
+    - develop
+    - main
+  services:
+    - name: docker:dind
+      entrypoint: ["env", "-u", "DOCKER_HOST"]
+      command: ["dockerd-entrypoint.sh"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+    # See https://github.com/docker-library/docker/pull/166
+    DOCKER_TLS_CERTDIR: ""
+
+.deploy:
+  image: registry.gitlab.com/jera-software/rock-world/lollapalooza/lollapalooza-api-serverless:stable
+  stage: Deploy
+  script:
+    - gem install bundler
+    - gem update --system
+    - bundle update --bundler
+    - bundle install -j $(nproc)
+    - bundle clean --force
+    - jets configure $SERVERLESS_GEMS_TOKEN
+    - bundle exec jets deploy
+
+.language-script: &language-script
+  - apt-get update >/dev/null
+  - apt-get install -y locales >/dev/null
+  - echo "en_US UTF-8" > /etc/locale.gen
+  - locale-gen en_US.UTF-8
+  - export LANG=en_US.UTF-8
+  - export LANGUAGE=en_US:en
+  - export LC_ALL=en_US.UTF-8
+  - apt-get install rsync -y
+  - apt-get install zip -y
+
+production:
+  extends: .deploy
+  before_script:
+    - *language-script
+    - export JETS_AGREE=no
+    - export AWS_REGION=$PRODUCTION_AWS_REGION
+    - export APLIPLAY_URL=$PRODUCTION_APLIPLAY_URL
+    - export APLIPLAY_KEY=$PRODUCTION_APLIPLAY_KEY
+    - export AWS_DEFAULT_REGION=$PRODUCTION_AWS_REGION
+    - export AWS_ACCESS_KEY_ID=$PRODUCTION_AWS_ACCESS_KEY_ID
+    - export AWS_SECRET_ACCESS_KEY=$PRODUCTION_AWS_SECRET_ACCESS_KEY
+    - export DEST_ENV="production"
+    - export JETS_ENV="production"
+    - export USER="jets"
+  only:
+    - main
