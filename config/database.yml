@@ -1,0 +1,23 @@
+default: &default
+  adapter: mysql2
+  encoding: utf8mb4
+  pool: <%= ENV["DB_POOL"] || 5  %>
+  database: <%= ENV['DB_NAME'] || 'teste_victor_development' %>
+  username: <%= ENV['DB_USER'] || 'root' %>
+  password: <%= ENV['DB_PASS'] %>
+  host: <%= ENV["DB_HOST"] %>
+  url: <%= ENV['DATABASE_URL'] %> # takes higher precedence than other settings
+  # reconnect: true # reconnect option is deprecated with newer mysql database versions
+
+development:
+  <<: *default
+  database: <%= ENV['DB_NAME'] || 'teste_victor_development' %>
+
+test:
+  <<: *default
+  database: teste_victor_test
+
+production:
+  <<: *default
+  database: teste_victor_production
+  url: <%= ENV['DATABASE_URL'] %>
