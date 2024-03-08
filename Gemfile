@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-gem "jets", git: 'https://github.com/jera/jets'
+gem "jets"
 
 
 # Use mysql as the database for Active Record

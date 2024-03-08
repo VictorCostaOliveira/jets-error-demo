@@ -3,7 +3,6 @@ class PostsController < ApplicationController
 
   # GET /posts
   def index
-
     render json: {text: "Jão pessoa da silva e çilva"}
   end
 
